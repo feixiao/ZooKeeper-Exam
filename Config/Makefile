@@ -1,9 +1,8 @@
 
 CC=g++
-
-HOME=/home/chenxueyou
-ZOOKEEPER_INC=-I${HOME}/zookeeper/include/zookeeper
-ZOOKEEPER_LIB= -L${HOME}/zookeeper/lib -lzookeeper_mt
+ZOOKEEPER_INSTALL=/usr/local
+ZOOKEEPER_INC=-I${ZOOKEEPER_INSTALL}/include/zookeeper
+ZOOKEEPER_LIB= -L${ZOOKEEPER_INSTALL}/lib -lzookeeper_mt
 
 CPPFLAGS=-Isrc/ -Dprotected=public -Dprivate=public
 all: testcase 

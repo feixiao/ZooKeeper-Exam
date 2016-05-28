@@ -5,8 +5,8 @@
 #include "inifile.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include"zookeeper.h"  
-#include"zookeeper_log.h"  
+#include "zookeeper.h"
+#include "zookeeper_log.h"
 
 namespace inifile{
 using namespace stringutil;
@@ -42,22 +42,22 @@ int IniFile::getline(string &str,FILE *fp)
 	char *buf =(char *) malloc(buf_size);
 	char *pbuf = NULL;
 	char * p = buf;
-	
+
 	if(buf == NULL){
 		fprintf(stderr,"no enough memory!exit!\n");
 		exit(-1);
 	}
-	
+
 	memset(buf,0,buf_size);
 	int total_size = buf_size;
 	while(fgets(p,buf_size,fp) != NULL){
 		plen = strlen(p);
 
 		if( plen > 0 && p[plen-1] != '\n' && !feof(fp)){
-	
+
 			total_size = strlen(buf)+buf_size;
 			pbuf = (char *)realloc(buf,total_size);
-			
+
 			if(pbuf == NULL){
 				free(buf);
 				fprintf(stderr,"no enough memory!exit!\n");
@@ -65,9 +65,9 @@ int IniFile::getline(string &str,FILE *fp)
 			}
 
 			buf = pbuf;
-			
+
 			p = buf + strlen(buf);
-			
+
 			continue;
 		}else{
 			break;
@@ -75,36 +75,36 @@ int IniFile::getline(string &str,FILE *fp)
 	}
 
 	str = buf;
-	
+
 	free(buf);
 	buf = NULL;
 	return str.length();
 
 }
 int IniFile::open(const string &filename)
-{	
+{
 	release();
 	fname_ = filename;
 	IniSection *section = NULL;
 	FILE *fp = fopen(filename.c_str(),"r");
-	
+
 	if(fp == NULL ){
 		return -1;
 	}
 
 	string line;
 	string comment;
-	
+
 	//增加默认段
 	section = new IniSection();
 	sections_[""] = section;
-	
+
 	while(getline(line,fp) > 0){
-		
+
 		trimright(line,'\n');
 		trimright(line,'\r');
 		trim(line);
-		
+
 		if(line.length() <= 0){
 			continue;
 		}
@@ -130,7 +130,7 @@ int IniFile::open(const string &filename)
 				fprintf(stderr,"此段已存在:%s\n",s.c_str());
 				return -1;
 			}
-			
+
 			section = new IniSection();
 			sections_[s] = section;
 
@@ -159,39 +159,39 @@ int IniFile::open(const string &filename)
 		}
 
 	}
-	
+
 	fclose(fp);
-	
+
 	return 0;
 }
 
 
 string zkopen(const string &host,const string &filepath,char *fp,int len)
 {
-    int timeout = 30000;  
-    char path_buffer[512];  
-    int bufferlen=sizeof(path_buffer); 
+    int timeout = 30000;
+    char path_buffer[512];
+    int bufferlen=sizeof(path_buffer);
     char conf_data[2048];
-    int conf_len=sizeof(conf_data); 
-  
-    zoo_set_debug_level(ZOO_LOG_LEVEL_WARN); //设置日志级别,避免出现一些其他信息  
+    int conf_len=sizeof(conf_data);
 
-    zhandle_t* zkhandle = zookeeper_init(host.c_str(),NULL, timeout, 0, (char *)"Monitor Test", 0);  
+    zoo_set_debug_level(ZOO_LOG_LEVEL_WARN); //设置日志级别,避免出现一些其他信息
 
-    if (zkhandle ==NULL)  
-    {  
-        fprintf(stderr, "Error when connecting to zookeeper servers...\n");  
-        exit(EXIT_FAILURE);  
-    }  
+    zhandle_t* zkhandle = zookeeper_init(host.c_str(),NULL, timeout, 0, (char *)"Monitor Test", 0);
+
+    if (zkhandle ==NULL)
+    {
+        fprintf(stderr, "Error when connecting to zookeeper servers...\n");
+        exit(EXIT_FAILURE);
+    }
 
     int ret = zoo_get(zkhandle,filepath.c_str(),0,conf_data,&conf_len,NULL);
     if(ret != ZOK){
         fprintf(stderr,"failed to get the data of path %s!\n",filepath.c_str());
         conf_data[0] = 0;
     }
-    
-    zookeeper_close(zkhandle); 
-    
+
+    zookeeper_close(zkhandle);
+
     strncpy(fp,conf_data,len);
     return conf_data;
 
@@ -200,7 +200,7 @@ string zkopen(const string &host,const string &filepath,char *fp,int len)
 int getline2(string &str,char * &src)
 {
     char *p = index(src,'\n');
-    
+
     while(p == src && src != NULL){
         src =  src+1;
         p = index(src,'\n');
@@ -219,32 +219,32 @@ int getline2(string &str,char * &src)
 }
 
 int IniFile::open2(const string &host,const string &filepath)
-{	
+{
 	release();
 	fname_ = filepath;
 	IniSection *section = NULL;
 	char fp[2048]={0};
 
     zkopen(host,filepath,fp,sizeof(fp));
-	
+
 	if(fp[0] == 0){
 		return -1;
 	}
 
 	string line;
 	string comment;
-	
+
 	//增加默认段
 	section = new IniSection();
 	sections_[""] = section;
-	
+
     char *p = fp;
 	while(getline2(line,p) > 0){
-		
+
 		trimright(line,'\n');
 		trimright(line,'\r');
 		trim(line);
-		
+
 		if(line.length() <= 0){
 			continue;
 		}
@@ -268,7 +268,7 @@ int IniFile::open2(const string &host,const string &filepath)
 				fprintf(stderr,"此段已存在:%s\n",s.c_str());
 				return -1;
 			}
-			
+
 			section = new IniSection();
 			sections_[s] = section;
 
@@ -297,8 +297,8 @@ int IniFile::open2(const string &host,const string &filepath)
 		}
 
 	}
-	
-	
+
+
 	return 0;
 }
 
@@ -312,17 +312,17 @@ int IniFile::saveas(const string &filename)
 	string data = "";
 	for(iterator sect = sections_.begin(); sect != sections_.end(); ++sect){
 		if(sect->second->comment != ""){
-			data += sect->second->comment;	
+			data += sect->second->comment;
 			data += delim;
 		}
 		if(sect->first != ""){
-			data += string("[")+sect->first + string("]");	
+			data += string("[")+sect->first + string("]");
 			data += delim;
 		}
 
 		for(IniSection::iterator item = sect->second->items.begin(); item != sect->second->items.end(); ++item){
 			if(item->comment != ""){
-				data += item->comment;	
+				data += item->comment;
 				data += delim;
 			}
 			data += item->key+"="+item->value;
@@ -335,7 +335,7 @@ int IniFile::saveas(const string &filename)
 	fwrite(data.c_str(),1,data.length(),fp);
 
 	fclose(fp);
-	
+
 	return 0;
 }
 IniSection *IniFile::getSection(const string &section /*=""*/)
@@ -351,7 +351,7 @@ IniSection *IniFile::getSection(const string &section /*=""*/)
 string IniFile::getStringValue(const string &section,const string &key,int &ret)
 {
 	string value,comment;
-	
+
 	ret = getValue(section,key,value,comment);
 
 	return value;
@@ -360,18 +360,18 @@ string IniFile::getStringValue(const string &section,const string &key,int &ret)
 int IniFile::getIntValue(const string &section,const string &key,int &ret)
 {
 	string value,comment;
-	
+
 	ret = getValue(section,key,value,comment);
-	
+
 	return atoi(value.c_str());
 }
 
 double IniFile::getDoubleValue(const string &section,const string &key,int &ret)
 {
 	string value,comment;
-	
+
 	ret = getValue(section,key,value,comment);
-	
+
 	return atof(value.c_str());
 
 }
@@ -417,7 +417,7 @@ int IniFile::getValues(const string &section,const string &key,
 			if(it->key == key){
 				value = it->value;
 				comment = it->comment;
-				
+
 				values.push_back(value);
 				comments.push_back(comment);
 			}
@@ -427,7 +427,7 @@ int IniFile::getValues(const string &section,const string &key,
 	return (values.size() ? RET_OK : RET_ERR);
 
 }
-bool IniFile::hasSection(const string &section) 
+bool IniFile::hasSection(const string &section)
 {
 	return (getSection(section) != NULL);
 
@@ -451,7 +451,7 @@ int IniFile::getSectionComment(const string &section,string & comment)
 {
 	comment = "";
 	IniSection * sect = getSection(section);
-	
+
 	if(sect != NULL){
 		comment = sect->comment;
 		return RET_OK;
@@ -462,7 +462,7 @@ int IniFile::getSectionComment(const string &section,string & comment)
 int IniFile::setSectionComment(const string &section,const string & comment)
 {
 	IniSection * sect = getSection(section);
-	
+
 	if(sect != NULL){
 		sect->comment = comment;
 		return RET_OK;
@@ -475,11 +475,11 @@ int IniFile::setValue(const string &section,const string &key,
 					  const string &value,const string &comment /*=""*/)
 {
 	IniSection * sect = getSection(section);
-	
+
 	string comt = comment;
 	if (comt != ""){
 		comt = flags_[0] +comt;
-	} 
+	}
 	if(sect == NULL){
 		sect = new IniSection();
 		if(sect == NULL){
@@ -489,7 +489,7 @@ int IniFile::setValue(const string &section,const string &key,
 		sect->name = section;
 		sections_[section] = sect;
 	}
-	
+
 	for(IniSection::iterator it = sect->begin(); it != sect->end(); ++it){
 		if(it->key == key){
 			it->value = value;
@@ -522,15 +522,15 @@ void IniFile::deleteSection(const string &section)
 	IniSection *sect = getSection(section);
 
 	if(sect != NULL){
-	
-		sections_.erase(section);	
+
+		sections_.erase(section);
 		delete sect;
 	}
 }
 void IniFile::deleteKey(const string &section,const string &key)
 {
 	IniSection * sect = getSection(section);
-	
+
 	if(sect != NULL){
 		for(IniSection::iterator it = sect->begin(); it != sect->end(); ++it){
 			if(it->key == key){
