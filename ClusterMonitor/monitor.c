@@ -126,9 +126,9 @@ void choose_mater(zhandle_t *zkhandle,const char *path)
         getlocalhost(localhost,sizeof(localhost));
         
         strcpy(master,procs.data[0]);
+        // 获取path下的所有子节点，选择序号最小的一个，取出它的ip_pid,如果和本进程相同，则本进程被选为Master。
         for(i = 1; i < procs.count; ++i){
             if(strcmp(master,procs.data[i])>0){
-                printf("master:%s",master);
                 strcpy(master,procs.data[i]);
             }
         }
@@ -148,6 +148,7 @@ void choose_mater(zhandle_t *zkhandle,const char *path)
          buffer_len：buffer的长度。
          stat：返回节点的stat消息。
     */
+    // 取出它的ip_pid,如果和本进程相同，则本进程被选为Master。
         ret = zoo_get(zkhandle,master_path,0,ip_pid,&ip_pid_len,NULL);
         if(ret != ZOK){
             fprintf(stderr,"failed to get the data of path %s!\n",master_path);
