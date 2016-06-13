@@ -4,20 +4,31 @@
 #include"zookeeper.h"  
 #include"zookeeper_log.h"  
 
-char g_host[512]= "172.17.0.36:2181";  
+char g_host[512]= "localhost:2181";  
 char g_path[512]= "/Notify";
+// g_monitor_child:变量等于0标识只监控节点，等于1标识监控所有子节点。
 int g_monitor_child = 0;
 
-//watch function when child list changed
+// watch function when child list changed
 void zktest_watcher_g(zhandle_t* zh, int type, int state, const char* path, void* watcherCtx);
+// 打印接受到的通知
 void show_notify(zhandle_t *zkhandle,const char *path);
-//show all process ip:pid
+// 打印所有子节点的进度
 void show_list(zhandle_t *zkhandle,const char *path);
 
 void print_usage();
 void get_option(int argc,const char* argv[]);
 
 /**********unitl*********************/  
+/*
+    通知/协调机制通常有两种方式
+        
+        系统调度模式：
+            操作人员发送通知实际是通过控制台改变某个节点的状态，然后Zookeeper将这些变化发送给注册了这个节点的Watcher的所有客户端。
+        
+        工作汇报模式：
+            这个情况是每个工作进程都在某个目录下创建一个临时节点，并携带工作的进度数据。这样汇总的进程可以监控目录子节点的变化获得工作进度的实时的全局情况。
+*/
 void print_usage()
 {
     printf("Usage : [notify] [-h] [-c] [-p path][-s ip:port] \n");
@@ -93,6 +104,8 @@ void zktest_watcher_g(zhandle_t* zh, int type, int state, const char* path, void
         show_list(zh,g_path);
     }
 } 
+
+// 只是简单的获取到写入/Notify节点的数据
 void show_notify(zhandle_t *zkhandle,const char *path)
 {
     char notify_buffer[1024]={0};
