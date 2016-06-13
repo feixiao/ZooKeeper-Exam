@@ -8,8 +8,8 @@
 #include"zookeeper_log.h"  
 
 enum MODE{PROVIDER_MODE,CONSUMER_MODE,MONITOR_MODE} g_mode;
-char g_host[512]= "172.17.0.36:2181";  
-char g_service[512]={ 0 };
+char g_host[512]= "localhost:2181";  
+char g_service[512]={"test"};
 char g_path[512]="/NameService";
 
 //watch function when child list changed
@@ -25,6 +25,11 @@ void print_usage();
 void get_option(int argc,const char* argv[]);
 
 /**********unitl*********************/  
+/*
+    -m 程序运行的方式，指定是服务提供者provider还是服务消费者consumer,或者是服务监控者monitor
+    -n 表示服务名称
+    -s 表示Zookeeper的服务地址IP:PORT
+*/
 void print_usage()
 {
     printf("Usage : [nameservice] [-h] [-m mode] [-n servicename] [-s ip:port] \n");
@@ -62,6 +67,7 @@ void get_option(int argc,const char* argv[])
 			printf("need parameter: %c\n", optopt);
 			exit(-1);
         case 'm':
+            // 提供三种不同的模式
             if (strcasecmp(optarg,"provider") == 0){
                 g_mode = PROVIDER_MODE;
             }else if (strcasecmp(optarg,"consumer") == 0){
@@ -94,7 +100,6 @@ void zktest_watcher_g(zhandle_t* zh, int type, int state, const char* path, void
     if(type == ZOO_CHILD_EVENT &&
        state == ZOO_CONNECTED_STATE &&
        g_mode == CONSUMER_MODE){
-        
         printf("providers list changed!\n");
         show_list(zh,path);
     }else if(type == ZOO_CHILD_EVENT &&
@@ -147,7 +152,6 @@ void show_list(zhandle_t *zkhandle,const char *path)
         printf("ip\tpid\n");
         for(i = 0; i < procs.count; ++i){
             sprintf(child_path,"%s/%s",path,procs.data[i]);
-            //printf("%s\n",child_path);
             ret = zoo_get(zkhandle,child_path,0,ip_pid,&ip_pid_len,NULL);
             if(ret != ZOK){
                 fprintf(stderr,"failed to get the data of path %s!\n",child_path);
@@ -164,6 +168,8 @@ void show_list(zhandle_t *zkhandle,const char *path)
         procs.data[i] = NULL;
     }
 }
+
+// 创建相应的节点
 int create(zhandle_t *zkhandle,const char *path,const char *ctx,int flag)
 {
     char path_buffer[512];  
@@ -194,6 +200,7 @@ int main(int argc, const char *argv[])
 
     get_option(argc,argv);
 
+    // 在ClusterMonitor中解释过
     zhandle_t* zkhandle = zookeeper_init(g_host,zktest_watcher_g, timeout, 0, (char *)"NameService Test", 0);  
 
     if (zkhandle ==NULL)  
@@ -214,12 +221,14 @@ int main(int argc, const char *argv[])
     create(zkhandle,path_buffer,"NameService Test",0);
   
     if(g_mode == PROVIDER_MODE){
-        
+        // 服务提供者
+        // 服务提供者在启动的时候，向ZK上的指定节点目录下写入自己的URL地址，这个操作就完成了服务的发布。
         char localhost[512]={0};
         getlocalhost(localhost,sizeof(localhost));
         
         char child_path[512];
         sprintf(child_path,"%s/%s/provider/",g_path,g_service);
+        // 创建节点，节点的值是自己的地址和端口
         ret = zoo_create(zkhandle,child_path,localhost,strlen(localhost),  
                           &ZOO_OPEN_ACL_UNSAFE,ZOO_SEQUENCE|ZOO_EPHEMERAL,  
                           path_buffer,bufferlen);  
@@ -230,7 +239,8 @@ int main(int argc, const char *argv[])
         }
 
     }else if (g_mode == CONSUMER_MODE){
-        
+        // 服务消费者
+        // 服务消费者启动的时候，订阅服务提供者目录下的提供者URL地址， 并向消费者目录下写入自己的URL地址。
         char localhost[512]={0};
         getlocalhost(localhost,sizeof(localhost));
         
