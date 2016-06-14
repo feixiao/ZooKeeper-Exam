@@ -73,14 +73,37 @@ ZooKeeper-Exam
         get lock of /Lock.
         self path is /Lock/lock-0000000001.
         do something....
-
-
-
-#### [Config : 远程配置管理](http://blog.csdn.net/qq910894904/article/details/40833747)
-
+        
 #### [分布式队列](http://blog.csdn.net/qq910894904/article/details/40834609)
++ 背景说明参考[文章](http://blog.csdn.net/qq910894904/article/details/40834609)。
++ 在Queue目录下面执行make，编译生成myqueue程序。
++ 启动两个myqueue程序，如下  
+       
+         ./myqueue -p /Queue -m push -v Hello
+        输出：
+            create path /Queue successfully!
+            create path /Queue successfully!
+            push:Hello
+         
+        ./myqueue -p /Queue -m push -v World
+        输出：
+            create path /Queue successfully!
+            push:World
+
+        ./myqueue -p /Queue -m pop
+         输出：
+            queue-0000000001:queue-0000000001
+            queue-0000000001:queue-0000000000
+            pop:Hello
+            
+        ./myqueue -p /Queue -m pop
+        输出：
+            queue-0000000001:queue-0000000001
+            pop:World
+
 
 
 ### 参考资料
 
 + [ 《API常用函数功能与参数详解》](http://blog.csdn.net/poechant/article/details/6675431)
++ [《ZooKeeper:分布式过程协同技术详解》](https://www.amazon.cn/ZooKeeper-%E5%88%86%E5%B8%83%E5%BC%8F%E8%BF%87%E7%A8%8B%E5%8D%8F%E5%90%8C%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3-Flavio-Junqueira/dp/B01C8INQYS/ref=sr_1_1?srs=1811984071&ie=UTF8&qid=1465911082&sr=8-1&keywords=ZooKeeper)
