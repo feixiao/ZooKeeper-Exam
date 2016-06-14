@@ -4,7 +4,16 @@
 #include"zookeeper.h"  
 #include"zookeeper_log.h"  
 
-char g_host[512]= "172.17.0.36:2181";  
+
+/*
+    我们准备来实现互斥的锁，按照官网的思路，给定一个锁的路径，如/Lock,
+    所有要申请这个锁的进程都在/Lock目录下创建一个/Lock/lock-的临时序列节点，
+    并监控/Lock的子节点变化事件。当子节点发送变化时用get_children()获取子节点的列表，
+    如果发现进程发现自己拥有最小的一个序号，则获得锁。处理业务完毕后需要释放锁，此时只需要删除该临时节点即可。
+    简单来说就是永远是拥有最小序号的进程获得锁。
+*/
+
+char g_host[512]= "localhost:2181";  
 char g_path[512]= "/Lock";
 
 typedef struct Lock
@@ -16,7 +25,7 @@ typedef struct Lock
 void print_usage();
 void get_option(int argc,const char* argv[]);
 
-/**********unitl*********************/  
+/***********************unitl*********************/  
 void print_usage()
 {
     printf("Usage : [mylock] [-h]  [-p path][-s ip:port] \n");
@@ -68,7 +77,8 @@ Lock *create_lock(zhandle_t *zkhandle,const char *path)
     int bufferlen = sizeof(path_buffer);
     Lock * lock = NULL;
 
-    int ret = zoo_exists(zkhandle,path,0,NULL); 
+    int ret = zoo_exists(zkhandle,path,0,NULL);
+    //  如果/Lock节点不存在，那么就创建
     if(ret != ZOK){
         ret = zoo_create(zkhandle,path,"1.0",strlen("1.0"),  
                           &ZOO_OPEN_ACL_UNSAFE,0,  
@@ -79,9 +89,11 @@ Lock *create_lock(zhandle_t *zkhandle,const char *path)
             printf("create path %s successfully!\n",path);
         }
     }
+    // 存在/Lock之后进行加锁操作
     if(ret == ZOK){
         char child_path[512];
         sprintf(child_path,"%s/lock-",path);
+        //  创建子节点，同时自动累加
         ret = zoo_create(zkhandle,child_path,"1.0",strlen("1.0"),  
                           &ZOO_OPEN_ACL_UNSAFE,ZOO_SEQUENCE|ZOO_EPHEMERAL,  
                           path_buffer,bufferlen);  
@@ -93,11 +105,10 @@ Lock *create_lock(zhandle_t *zkhandle,const char *path)
     }
     if(ret == ZOK){
         lock = (Lock *)malloc(sizeof(Lock));
-        
+        // path_buffer：由新节点填充的路径值
         strcpy(lock->lockpath,path);
         strcpy(lock->selfpath,path_buffer);
     }
-
     return lock;
 }
 
@@ -116,6 +127,7 @@ int try_lock(zhandle_t *zkhandle,Lock *lock)
         
         ret = 1;
         for(i = 0; i < children.count; ++i){
+            // 判断自己是否拥有最小序号，从而判断自己是否拥有锁
             if(strcmp(children.data[i],myseq) < 0){
                 ret = 0;
                 break;
@@ -131,6 +143,7 @@ int try_lock(zhandle_t *zkhandle,Lock *lock)
     return ret;
 }
 
+// lock的实现
 Lock *lock(zhandle_t *zkhandle,const char *path)
 {
     int ret ;
@@ -146,6 +159,7 @@ Lock *lock(zhandle_t *zkhandle,const char *path)
     return lock;
 }
 
+// unlock实现是删除自己的节点。
 int unlock(zhandle_t *zkhandle,Lock * *lock)
 {
     if(*lock){
@@ -161,6 +175,8 @@ int unlock(zhandle_t *zkhandle,Lock * *lock)
 
     return ZOK;
 }
+
+
 
 int main(int argc, const char *argv[])  
 {  
