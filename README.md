@@ -1,6 +1,6 @@
 ZooKeeper-Exam
 ==============
-####准备工作
+#### 准备工作
 
 + 安装部署zookeeper
   
