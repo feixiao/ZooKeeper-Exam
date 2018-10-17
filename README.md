@@ -107,3 +107,6 @@ ZooKeeper-Exam
 
 + [ 《API常用函数功能与参数详解》](http://blog.csdn.net/poechant/article/details/6675431)
 + [《ZooKeeper:分布式过程协同技术详解》](https://www.amazon.cn/ZooKeeper-%E5%88%86%E5%B8%83%E5%BC%8F%E8%BF%87%E7%A8%8B%E5%8D%8F%E5%90%8C%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3-Flavio-Junqueira/dp/B01C8INQYS/ref=sr_1_1?srs=1811984071&ie=UTF8&qid=1465911082&sr=8-1&keywords=ZooKeeper)
+
++ [《实现了一个Zookeeper C++客户端 》](http://baozh.github.io/2016-02/zookeeper-cpp-client/)
++ [《c++下zookeeper使用实例》](https://blog.csdn.net/whuqin/article/details/8859987)
